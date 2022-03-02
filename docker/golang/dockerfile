@@ -1,0 +1,18 @@
+FROM golang:alpine3.15 AS stage01
+
+WORKDIR /usr/local/app
+
+RUN go mod init desafio-go
+
+COPY desafio-go.go .
+
+RUN go build desafio-go.go
+
+
+FROM scratch
+
+WORKDIR /
+
+COPY --from=stage01 /usr/local/app/desafio-go /
+
+ENTRYPOINT [ "./desafio-go" ]
