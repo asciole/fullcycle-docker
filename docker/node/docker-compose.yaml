@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  
+  app:
+    build: 
+      context: .
+      dockerfile: dockerfile.app
+    container_name: app
+    restart: always 
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 40s node index.js
+    networks:
+      - nodenet
+    ports:
+      - "3000:3000"
+    tty: true
+    depends_on:
+      - db
+        
+  db:
+    build: 
+      context: .
+      dockerfile: dockerfile.db
+    container_name: db
+#    command: --default-authentication-plugin=mysql_native_password   
+    command: --innodb-use-native-aio=0
+    restart: always   
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - "3306:3306" 
+    tty: true
+    networks:
+      - nodenet
+
+  web:
+    build: 
+      context: .
+      dockerfile: dockerfile.nginx
+    container_name: web
+    restart: always
+    entrypoint: dockerize -wait tcp://app:3000 -timeout 20s nginx -g 'daemon off;'
+    ports:
+      - "8080:80"
+    networks:
+      - nodenet
+    depends_on:
+      - app
+
+networks:
+  nodenet:
+    driver: bridge
+    
